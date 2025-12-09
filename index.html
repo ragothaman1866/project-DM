@@ -1,514 +1,539 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pandemic Management </title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <script src="backend.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #0f3460 0%, #16213e 50%, #533483 100%); min-height: 100vh; color: #333; }
-        
-        /* Header with Menu, Title, Contact */
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: rgba(15, 52, 96, 0.85); backdrop-filter: blur(20px); position: fixed; width: 100%; top: 0; z-index: 1000; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); }
-        
-        /* Hamburger Menu Icon */
-        .hamburger { display: none; flex-direction: column; gap: 6px; cursor: pointer; background: none; border: none; padding: 5px; }
-        .hamburger span { width: 24px; height: 3px; background: #00d4ff; border-radius: 3px; transition: all 0.4s ease; }
-        .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(8px, 8px); }
-        .hamburger.active span:nth-child(2) { opacity: 0; }
-        .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
-        
-        /* Side Navigation Menu */
-        .side-nav { position: fixed; left: -300px; top: 65px; width: 280px; height: calc(100vh - 65px); background: white; box-shadow: 2px 0 15px rgba(0, 0, 0, 0.2); transition: all 0.4s ease; z-index: 998; overflow-y: auto; padding-top: 20px; }
-        .side-nav.active { left: 0; }
-        .side-nav-item { display: block; padding: 14px 24px; color: #0f3460; text-decoration: none; font-weight: 600; transition: all 0.3s; border-left: 4px solid transparent; cursor: pointer; font-size: 1em; }
-        .side-nav-item:hover { background: #f0f5fa; color: #00d4ff; border-left-color: #00d4ff; padding-left: 28px; }
-        .side-nav-divider { height: 1px; background: #e8f0f7; margin: 10px 0; }
-        .side-nav-header { padding: 0 24px; color: #666; font-size: 0.85em; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; margin-bottom: 10px; }
-        
-        /* Overlay for side nav */
-        .side-nav-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 997; }
-        .side-nav-overlay.active { display: block; }
-        
-        /* Modified for multiple menu items */
-        .menu-items { display: flex; gap: 12px; }
-        .menu-btn { background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%); color: white; border: none; padding: 12px 28px; border-radius: 50px; cursor: pointer; font-weight: 700; transition: all 0.3s; font-size: 0.95em; box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3); }
-        .menu-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0, 212, 255, 0.5); }
-        
-        /* Mobile responsive */
-        @media (max-width: 768px) {
-            .header { padding: 12px 15px; }
-            .menu-items { display: none; }
-            .hamburger { display: flex; }
-            .title { font-size: 1.3em; margin: 0 auto; flex: 1; }
-            .contact-bar { padding: 8px 12px; font-size: 0.85em; }
-            .main-content { margin-top: 80px; }
-        }
-        
-        .title { color: white; font-size: 2.2em; font-weight: 800; text-align: center; flex: 1; margin: 0 40px; letter-spacing: -0.5px; }
-        .contact-bar { background: rgba(255, 255, 255, 0.15); color: white; padding: 10px 24px; border-radius: 50px; font-weight: 600; cursor: pointer; transition: all 0.3s; border: 2px solid rgba(255, 255, 255, 0.2); }
-        .contact-bar:hover { background: rgba(255, 255, 255, 0.25); transform: scale(1.05); border-color: rgba(255, 255, 255, 0.4); }
-        
-        /* Main Content */
-        .main-content { margin-top: 100px; padding: 60px 50px; text-align: center; color: white; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
-        .main-title { font-size: 3.5em; margin-bottom: 30px; font-weight: 800; letter-spacing: -1px; text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); line-height: 1.2; }
-        .paragraphs { max-width: 800px; margin: 0 auto; line-height: 1.9; font-size: 1.15em; opacity: 0.95; }
-        .paragraphs p { margin-bottom: 18px; }
-        
-        /* Dashboard Page */
-        .dashboard { display: none; padding: 100px 50px 50px; min-height: 100vh; background: linear-gradient(180deg, #f5f8fc 0%, #eef3f9 100%); }
-        .user-info { background: white; padding: 50px; border-radius: 20px; box-shadow: 0 15px 40px rgba(15, 52, 96, 0.1); max-width: 550px; margin: 0 auto 50px; text-align: center; border-top: 5px solid #00d4ff; }
-        .user-info h2 { color: #0f3460; margin-bottom: 35px; font-size: 2.2em; font-weight: 800; }
-        .user-detail { background: linear-gradient(135deg, #e8f0f7 0%, #f0f5fa 100%); padding: 18px; margin: 12px 0; border-radius: 12px; font-size: 1.1em; color: #0f3460; font-weight: 600; }
-        .auth-box { background: linear-gradient(135deg, #0f3460 0%, #1a4d6d 100%); padding: 45px; border-radius: 20px; box-shadow: 0 20px 50px rgba(15, 52, 96, 0.2); max-width: 450px; margin: 0 auto; color: white; text-align: center; }
-        .auth-box h3 { font-size: 1.5em; margin-bottom: 30px; font-weight: 800; }
-        .auth-btn { background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%); color: white; border: none; padding: 14px 40px; border-radius: 50px; font-size: 1.05em; font-weight: 700; cursor: pointer; margin: 12px; transition: all 0.3s; width: calc(100% - 24px); box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3); }
-        .auth-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0, 212, 255, 0.5); }
-        
-        /* Login Page */
-        .login-page { display: none; padding: 100px 50px 50px; min-height: 100vh; background: linear-gradient(180deg, #f5f8fc 0%, #eef3f9 100%); }
-        .login-form { background: white; padding: 50px; border-radius: 20px; box-shadow: 0 20px 50px rgba(15, 52, 96, 0.15); max-width: 480px; margin: 0 auto; border-top: 5px solid #00d4ff; }
-        .form-group { margin-bottom: 28px; text-align: left; }
-        .form-group label { display: block; margin-bottom: 10px; color: #0f3460; font-weight: 700; font-size: 1.05em; }
-        .form-group input { width: 100%; padding: 14px 18px; border: 2px solid #e8f0f7; border-radius: 12px; font-size: 1em; transition: all 0.3s; font-family: inherit; }
-        .form-group input:focus { outline: none; border-color: #00d4ff; box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.1); background: rgba(0, 212, 255, 0.02); }
-        .divider { text-align: center; margin: 35px 0; color: #999; position: relative; font-weight: 600; }
-        .divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #e8f0f7; }
-        .divider span { background: white; padding: 0 20px; }
-        .login-message { padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; font-weight: 600; text-align: center; }
-        .login-message.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .login-message.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .social-btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; margin-bottom: 15px; transition: all 0.3s; font-size: 1.05em; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
-        .google-btn { background: linear-gradient(135deg, #4285f4 0%, #2563eb 100%); color: white; }
-        .apple-btn { background: linear-gradient(135deg, #1f1f1f 0%, #3a3a3a 100%); color: white; }
-        .social-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2); }
-        
-        /* Role Selection Page */
-        .role-page { display: none; padding: 100px 50px 50px; min-height: 100vh; background: linear-gradient(180deg, #f5f8fc 0%, #eef3f9 100%); }
-        .role-container { max-width: 900px; margin: 0 auto; }
-        .role-title { text-align: center; color: #0f3460; font-size: 2.2em; font-weight: 800; margin-bottom: 15px; }
-        .role-subtitle { text-align: center; color: #666; font-size: 1.1em; margin-bottom: 50px; }
-        .roles-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; }
-        .role-card { background: white; padding: 40px 30px; border-radius: 20px; box-shadow: 0 15px 40px rgba(15, 52, 96, 0.1); text-align: center; cursor: pointer; transition: all 0.4s; border: 3px solid transparent; }
-        .role-card:hover { transform: translateY(-10px); box-shadow: 0 25px 60px rgba(15, 52, 96, 0.2); border-color: #00d4ff; }
-        .role-icon { font-size: 4em; margin-bottom: 20px; }
-        .role-card h3 { color: #0f3460; font-size: 1.8em; margin-bottom: 15px; font-weight: 800; }
-        .role-card p { color: #666; font-size: 1em; line-height: 1.6; margin-bottom: 25px; }
-        .role-select-btn { background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%); color: white; border: none; padding: 12px 30px; border-radius: 50px; font-weight: 700; cursor: pointer; transition: all 0.3s; font-size: 1em; box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3); }
-        .role-select-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 212, 255, 0.5); }
-        
-        /* Animations */
-        .fade-in { animation: fadeIn 0.6s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
-</head>
-<body>
-    <div id="mainPage">
-        <header class="header">
-            <button class="hamburger" onclick="toggleSideNav()" id="hamburgerBtn">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-            <div class="side-nav" id="sideNav">
-                <div class="side-nav-header">Main</div>
-                <a class="side-nav-item" onclick="showMain(); closeSideNav();">Home</a>
-                <a class="side-nav-item" onclick="showDashboard(); closeSideNav();">Dashboard</a>
-                <a class="side-nav-item" onclick="showDashboard(); closeSideNav();">Profile</a>
-                
-                <div class="side-nav-divider"></div>
-                
-                <div class="side-nav-header">Authentication</div>
-                <a class="side-nav-item" onclick="showLogin(); closeSideNav();">Login</a>
-                <a class="side-nav-item" onclick="showLogout(); closeSideNav();">Logout</a>
-                
-                <div class="side-nav-divider"></div>
-                
-                <div class="side-nav-header">Help</div>
-                <a class="side-nav-item" onclick="contactSupport(); closeSideNav();">Contact Support</a>
-                <a class="side-nav-item" onclick="alert('FAQ loaded'); closeSideNav();">FAQ</a>
-            </div>
-            <div class="side-nav-overlay" id="sideNavOverlay" onclick="closeSideNav()"></div>
-            <div class="menu-items">
-                <button class="menu-btn" onclick="showDashboard()">Dashboard</button>
-                <button class="menu-btn" onclick="showDashboard()">Profile</button>
-                <button class="menu-btn" onclick="showLogin()">Login</button>
-                <button class="menu-btn" onclick="showLogin()">Sign In</button>
-            </div>
-            <h1 class="title">Pandemic Management System</h1>
-            <div class="contact-bar" onclick="alert('Contact: support@pandemicmgmt.com')">Contact Us</div>
-        </header>
-        
-        <main class="main-content">
-            <h2 class="main-title fade-in">Real-time Pandemic Response Platform</h2>
-            <div class="paragraphs fade-in">
-                <p>Monitor outbreaks, manage resources, and coordinate emergency responses across regions with our comprehensive dashboard solution.</p>
-                <p>Track infection rates, vaccine distribution, hospital capacity, and public health metrics in real-time with advanced analytics.</p>
-                <p>Secure authentication ensures only authorized personnel access critical pandemic management tools and data.</p>
-            </div>
-        </main>
-    </div>
-    
-    <div id="dashboard" class="dashboard">
-        <header class="header">
-            <button class="hamburger" onclick="toggleSideNav2()" id="hamburgerBtn2">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-            <div class="side-nav" id="sideNav2">
-                <div class="side-nav-header">Main</div>
-                <a class="side-nav-item" onclick="showMain(); closeSideNav2();">Home</a>
-                <a class="side-nav-item" onclick="showDashboard(); closeSideNav2();">Dashboard</a>
-                <a class="side-nav-item" onclick="showProfile(); closeSideNav2();">Profile</a>
-                
-                <div class="side-nav-divider"></div>
-                
-                <div class="side-nav-header">Account</div>
-                <a class="side-nav-item" onclick="showLogout(); closeSideNav2();">Logout</a>
-                
-                <div class="side-nav-divider"></div>
-                
-                <div class="side-nav-header">Help</div>
-                <a class="side-nav-item" onclick="contactSupport(); closeSideNav2();">Contact Support</a>
-            </div>
-            <div class="side-nav-overlay" id="sideNavOverlay2" onclick="closeSideNav2()"></div>
-            <button class="menu-btn" onclick="showMain()">← Back</button>
-            <h1 class="title">Dashboard / Profile</h1>
-            <div class="contact-bar" onclick="alert('Contact: support@pandemicmgmt.com')">Contact Us</div>
-        </header>
-        
-        <div class="user-info fade-in">
-            <h2>Welcome Back!</h2>
-            <div class="user-detail"><strong>Name:</strong> <span id="userNameDisplay">Loading...</span></div>
-            <div class="user-detail"><strong>Username:</strong> <span id="userUsernameDisplay">Loading...</span></div>
-            <div class="user-detail"><strong>Email:</strong> <span id="userEmailDisplay">Loading...</span></div>
-            <div class="user-detail"><strong>Selected Role:</strong> <span id="userRoleDisplay">Loading...</span></div>
-            <div class="user-detail"><strong>User ID:</strong> <span id="userIdDisplay">Loading...</span></div>
-        </div>
-        
-        <div class="auth-box fade-in">
-            <h3>Quick Access</h3>
-            <button class="auth-btn" onclick="showProfile()">Edit Profile</button>
-            <button class="auth-btn" onclick="showLogout()">Logout</button>
-        </div>
-    </div>
-    
-    <div id="loginPage" class="login-page">
-        <header class="header">
-            <button class="hamburger" onclick="toggleSideNav3()" id="hamburgerBtn3">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-            <div class="side-nav" id="sideNav3">
-                <div class="side-nav-header">Main</div>
-                <a class="side-nav-item" onclick="showMain(); closeSideNav3();">Home</a>
-                
-                <div class="side-nav-divider"></div>
-                
-                <div class="side-nav-header">Help</div>
-                <a class="side-nav-item" onclick="contactSupport(); closeSideNav3();">Contact Support</a>
-                <a class="side-nav-item" onclick="alert('FAQ loaded'); closeSideNav3();">FAQ</a>
-            </div>
-            <div class="side-nav-overlay" id="sideNavOverlay3" onclick="closeSideNav3()"></div>
-            <button class="menu-btn" onclick="showMain()">← Back</button>
-            <h1 class="title">Secure Login / Sign In</h1>
-            <div class="contact-bar" onclick="alert('Contact: support@pandemicmgmt.com')">Contact Us</div>
-        </header>
-        
-        <div class="login-form fade-in">
-            <div id="loginMessage" class="login-message" style="display:none;"></div>
-            <form id="loginForm" onsubmit="handleLogin(event)">
-                <div class="form-group">
-                    <label>Username or Phone Number</label>
-                    <input type="text" id="loginUsername" placeholder="Enter username or phone" required>
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="loginPassword" placeholder="Enter your password" required>
-                </div>
-                
-                <button type="submit" class="social-btn" style="background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%); color: white; margin-bottom: 20px;">Login</button>
-            </form>
-            
-            <div class="divider">
-                <span>or</span>
-            </div>
-            
-            <button class="social-btn google-btn">Continue with Google</button>
-            <button class="social-btn apple-btn">Continue with Apple</button>
-            
-            <div style="text-align: center; margin-top: 25px;">
-                <p style="color: #666; font-size: 0.95em;">Demo Credentials:</p>
-                <p style="color: #0f3460; font-weight: 600; font-size: 0.9em;">
-                    Username: <strong>jane.smith</strong><br>
-                    Password: <strong>password123</strong>
-                </p>
-            </div>
-        </div>
-    </div>
+<!DOCTYPE html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>Pandemic Management </title> 
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet"> 
+        <style> 
+        * { margin: 0; padding: 0; box-sizing: border-box; } 
+        body { font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #0f3460 0%, #16213e 50%, #533483 100%); min-height: 100vh; color: #333; } 
+        
+        /* Header with Menu, Title, Contact */ 
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: rgba(15, 52, 96, 0.85); backdrop-filter: blur(20px); position: fixed; width: 100%; top: 0; z-index: 1000; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); } 
+        
+        /* Hamburger Menu Icon */ 
+        .hamburger { display: none; flex-direction: column; gap: 6px; cursor: pointer; background: none; border: none; padding: 5px; } 
+        .hamburger span { width: 24px; height: 3px; background: #00d4ff; border-radius: 3px; transition: all 0.4s ease; } 
+        .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(8px, 8px); } 
+        .hamburger.active span:nth-child(2) { opacity: 0; } 
+        .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); } 
+        
+        /* Side Navigation Menu */ 
+        .side-nav { position: fixed; left: -300px; top: 65px; width: 280px; height: calc(100vh - 65px); background: white; box-shadow: 2px 0 15px rgba(0, 0, 0, 0.2); transition: all 0.4s ease; z-index: 998; overflow-y: auto; padding-top: 20px; } 
+        .side-nav.active { left: 0; } 
+        .side-nav-item { display: block; padding: 14px 24px; color: #0f3460; text-decoration: none; font-weight: 600; transition: all 0.3s; border-left: 4px solid transparent; cursor: pointer; font-size: 1em; } 
+        .side-nav-item:hover { background: #f0f5fa; color: #00d4ff; border-left-color: #00d4ff; padding-left: 28px; } 
+        .side-nav-divider { height: 1px; background: #e8f0f7; margin: 10px 0; } 
+        .side-nav-header { padding: 0 24px; color: #666; font-size: 0.85em; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; margin-bottom: 10px; } 
+        
+        /* Overlay for side nav */ 
+        .side-nav-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 997; } 
+        .side-nav-overlay.active { display: block; } 
+        
+        /* Modified for multiple menu items */ 
+        .menu-items { display: flex; gap: 12px; } 
+        .menu-btn { background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%); color: white; border: none; padding: 12px 28px; border-radius: 50px; cursor: pointer; font-weight: 700; transition: all 0.3s; font-size: 0.95em; box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3); } 
+        .menu-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0, 212, 255, 0.5); } 
+        
+        /* Mobile responsive */ 
+        @media (max-width: 768px) { 
+            .header { padding: 12px 15px; } 
+            .menu-items { display: none; } 
+            .hamburger { display: flex; } 
+            .title { font-size: 1.3em; margin: 0 auto; flex: 1; } 
+            .contact-bar { padding: 8px 12px; font-size: 0.85em; } 
+            .main-content { margin-top: 80px; } 
+        } 
+        
+        .title { color: white; font-size: 2.2em; font-weight: 800; text-align: center; flex: 1; margin: 0 40px; letter-spacing: -0.5px; } 
+        .contact-bar { background: rgba(255, 255, 255, 0.15); color: white; padding: 10px 24px; border-radius: 50px; font-weight: 600; cursor: pointer; transition: all 0.3s; border: 2px solid rgba(255, 255, 255, 0.2); } 
+        .contact-bar:hover { background: rgba(255, 255, 255, 0.25); transform: scale(1.05); border-color: rgba(255, 255, 255, 0.4); } 
+        
+        /* Main Content */ 
+        .main-content { margin-top: 100px; padding: 60px 50px; text-align: center; color: white; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; } 
+        .main-title { font-size: 3.5em; margin-bottom: 30px; font-weight: 800; letter-spacing: -1px; text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); line-height: 1.2; } 
+        .paragraphs { max-width: 800px; margin: 0 auto; line-height: 1.9; font-size: 1.15em; opacity: 0.95; } 
+        .paragraphs p { margin-bottom: 18px; } 
+        
+        /* Dashboard Page */ 
+        .dashboard { display: none; padding: 100px 50px 50px; min-height: 100vh; background: linear-gradient(180deg, #f5f8fc 0%, #eef3f9 100%); } 
+        .user-info { background: white; padding: 50px; border-radius: 20px; box-shadow: 0 15px 40px rgba(15, 52, 96, 0.1); max-width: 550px; margin: 0 auto 50px; text-align: center; border-top: 5px solid #00d4ff; } 
+        .user-info h2 { color: #0f3460; margin-bottom: 35px; font-size: 2.2em; font-weight: 800; } 
+        .user-detail { background: linear-gradient(135deg, #e8f0f7 0%, #f0f5fa 100%); padding: 18px; margin: 12px 0; border-radius: 12px; font-size: 1.1em; color: #0f3460; font-weight: 600; } 
+        .auth-box { background: linear-gradient(135deg, #0f3460 0%, #1a4d6d 100%); padding: 45px; border-radius: 20px; box-shadow: 0 20px 50px rgba(15, 52, 96, 0.2); max-width: 450px; margin: 0 auto; color: white; text-align: center; } 
+        .auth-box h3 { font-size: 1.5em; margin-bottom: 30px; font-weight: 800; } 
+        .auth-btn { background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%); color: white; border: none; padding: 14px 40px; border-radius: 50px; font-size: 1.05em; font-weight: 700; cursor: pointer; margin: 12px; transition: all 0.3s; width: calc(100% - 24px); box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3); } 
+        .auth-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0, 212, 255, 0.5); } 
+        
+        /* Login Page */ 
+        .login-page { display: none; padding: 100px 50px 50px; min-height: 100vh; background: linear-gradient(180deg, #f5f8fc 0%, #eef3f9 100%); } 
+        .login-form { background: white; padding: 50px; border-radius: 20px; box-shadow: 0 20px 50px rgba(15, 52, 96, 0.15); max-width: 480px; margin: 0 auto; border-top: 5px solid #00d4ff; } 
+        .form-group { margin-bottom: 28px; text-align: left; } 
+        .form-group label { display: block; margin-bottom: 10px; color: #0f3460; font-weight: 700; font-size: 1.05em; } 
+        .form-group input { width: 100%; padding: 14px 18px; border: 2px solid #e8f0f7; border-radius: 12px; font-size: 1em; transition: all 0.3s; font-family: inherit; } 
+        .form-group input:focus { outline: none; border-color: #00d4ff; box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.1); background: rgba(0, 212, 255, 0.02); } 
+        .divider { text-align: center; margin: 35px 0; color: #999; position: relative; font-weight: 600; } 
+        .divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #e8f0f7; } 
+        .divider span { background: white; padding: 0 20px; } 
+        .login-message { padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; font-weight: 600; text-align: center; } 
+        .login-message.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; } 
+        .login-message.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; } 
+        .social-btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; margin-bottom: 15px; transition: all 0.3s; font-size: 1.05em; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); } 
+        .social-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2); } 
+        .google-btn { background: linear-gradient(135deg, #4285f4 0%, #2563eb 100%); color: white; } 
+        .apple-btn { background: linear-gradient(135deg, #1f1f1f 0%, #3a3a3a 100%); color: white; } 
+        .social-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2); } 
+        
+        /* Role Selection Page */ 
+        .role-page { display: none; padding: 100px 50px 50px; min-height: 100vh; background: linear-gradient(180deg, #f5f8fc 0%, #eef3f9 100%); } 
+        .role-container { max-width: 900px; margin: 0 auto; } 
+        .role-title { text-align: center; color: #0f3460; font-size: 2.2em; font-weight: 800; margin-bottom: 15px; } 
+        .role-subtitle { text-align: center; color: #666; font-size: 1.1em; margin-bottom: 50px; } 
+        .roles-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; } 
+        .role-card { background: white; padding: 40px 30px; border-radius: 20px; box-shadow: 0 15px 40px rgba(15, 52, 96, 0.1); text-align: center; cursor: pointer; transition: all 0.4s; border: 3px solid transparent; } 
+        .role-card:hover { transform: translateY(-10px); box-shadow: 0 25px 60px rgba(15, 52, 96, 0.2); border-color: #00d4ff; } 
+        .role-icon { font-size: 4em; margin-bottom: 20px; } 
+        .role-card h3 { color: #0f3460; font-size: 1.8em; margin-bottom: 15px; font-weight: 800; } 
+        .role-card p { color: #666; font-size: 1em; line-height: 1.6; margin-bottom: 25px; } 
+        .role-select-btn { background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%); color: white; border: none; padding: 12px 30px; border-radius: 50px; font-weight: 700; cursor: pointer; transition: all 0.3s; font-size: 1em; box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3); } 
+        .role-select-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 212, 255, 0.5); } 
+        
+        /* Animations */ 
+        .fade-in { animation: fadeIn 0.6s ease-in; } 
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } } 
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } } 
+    </style> 
+</head> 
+<body> 
+    <div id="mainPage"> 
+        <header class="header"> 
+            <button class="hamburger" onclick="toggleSideNav()" id="hamburgerBtn"> 
+                <span></span> 
+                <span></span> 
+                <span></span> 
+            </button> 
+            <div class="side-nav" id="sideNav"> 
+                <div class="side-nav-header">Main</div> 
+                <a class="side-nav-item" onclick="showMain(); closeSideNav();">Home</a> 
+                <a class="side-nav-item" onclick="showDashboard(); closeSideNav();">Dashboard</a> 
+                <a class="side-nav-item" onclick="showDashboard(); closeSideNav();">Profile</a> 
+                
+                <div class="side-nav-divider"></div> 
+                
+                <div class="side-nav-header">Authentication</div> 
+                <a class="side-nav-item" onclick="showLogin(); closeSideNav();">Login</a> 
+                <a class="side-nav-item" onclick="showLogout(); closeSideNav();">Logout</a> 
+                
+                <div class="side-nav-divider"></div> 
+                
+                <div class="side-nav-header">Help</div> 
+                <a class="side-nav-item" onclick="contactSupport(); closeSideNav();">Contact Support</a> 
+                <a class="side-nav-item" onclick="alert('FAQ loaded'); closeSideNav();">FAQ</a> 
+            </div> 
+            <div class="side-nav-overlay" id="sideNavOverlay" onclick="closeSideNav()"></div> 
+            <div class="menu-items"> 
+                <button class="menu-btn" onclick="showDashboard()">Dashboard</button> 
+                <button class="menu-btn" onclick="showDashboard()">Profile</button> 
+                <button class="menu-btn" onclick="showLogin()">Login</button> 
+                <button class="menu-btn" onclick="showLogin()">Sign In</button> 
+            </div> 
+            <h1 class="title">Pandemic Management System</h1> 
+            <div class="contact-bar" onclick="alert('Contact: support@pandemicmgmt.com')">Contact Us</div> 
+        </header> 
+        
+        <main class="main-content"> 
+            <h2 class="main-title fade-in">Real-time Pandemic Response Platform</h2> 
+            <div class="paragraphs fade-in"> 
+                <p>Monitor outbreaks, manage resources, and coordinate emergency responses across regions with our comprehensive dashboard solution.</p> 
+                <p>Track infection rates, vaccine distribution, hospital capacity, and public health metrics in real-time with advanced analytics.</p> 
+                <p>Secure authentication ensures only authorized personnel access critical pandemic management tools and data.</p> 
+            </div> 
+        </main> 
+    </div> 
+    
+    <div id="dashboard" class="dashboard"> 
+        <header class="header"> 
+            <button class="hamburger" onclick="toggleSideNav2()" id="hamburgerBtn2"> 
+                <span></span> 
+                <span></span> 
+                <span></span> 
+            </button> 
+            <div class="side-nav" id="sideNav2"> 
+                <div class="side-nav-header">Main</div> 
+                <a class="side-nav-item" onclick="showMain(); closeSideNav2();">Home</a> 
+                <a class="side-nav-item" onclick="showDashboard(); closeSideNav2();">Dashboard</a> 
+                <a class="side-nav-item" onclick="showProfile(); closeSideNav2();">Profile</a> 
+                
+                <div class="side-nav-divider"></div> 
+                
+                <div class="side-nav-header">Account</div> 
+                <a class="side-nav-item" onclick="showLogout(); closeSideNav2();">Logout</a> 
+                
+                <div class="side-nav-divider"></div> 
+                
+                <div class="side-nav-header">Help</div> 
+                <a class="side-nav-item" onclick="contactSupport(); closeSideNav2();">Contact Support</a> 
+            </div> 
+            <div class="side-nav-overlay" id="sideNavOverlay2" onclick="closeSideNav2()"></div> 
+            <button class="menu-btn" onclick="showMain()">← Back</button> 
+            <h1 class="title">Dashboard / Profile</h1> 
+            <div class="contact-bar" onclick="alert('Contact: support@pandemicmgmt.com')">Contact Us</div> 
+        </header> 
+        
+        <div class="user-info fade-in"> 
+            <h2>Welcome Back!</h2> 
+            <div class="user-detail"><strong>Name:</strong> <span id="userNameDisplay">Loading...</span></div> 
+            <div class="user-detail"><strong>Username:</strong> <span id="userUsernameDisplay">Loading...</span></div> 
+            <div class="user-detail"><strong>Email:</strong> <span id="userEmailDisplay">Loading...</span></div> 
+            <div class="user-detail"><strong>Selected Role:</strong> <span id="userRoleDisplay">Loading...</span></div> 
+            <div class="user-detail"><strong>User ID:</strong> <span id="userIdDisplay">Loading...</span></div> 
+        </div> 
+        
+        <div class="auth-box fade-in"> 
+            <h3>Quick Access</h3> 
+            <button class="auth-btn" onclick="showProfile()">Edit Profile</button> 
+            <button class="auth-btn" onclick="showLogout()">Logout</button> 
+        </div> 
+    </div> 
+    
+    <div id="loginPage" class="login-page"> 
+        <header class="header"> 
+            <button class="hamburger" onclick="toggleSideNav3()" id="hamburgerBtn3"> 
+                <span></span> 
+                <span></span> 
+                <span></span> 
+            </button> 
+            <div class="side-nav" id="sideNav3"> 
+                <div class="side-nav-header">Main</div> 
+                <a class="side-nav-item" onclick="showMain(); closeSideNav3();">Home</a> 
+                
+                <div class="side-nav-divider"></div> 
+                
+                <div class="side-nav-header">Help</div> 
+                <a class="side-nav-item" onclick="contactSupport(); closeSideNav3();">Contact Support</a> 
+                <a class="side-nav-item" onclick="alert('FAQ loaded'); closeSideNav3();">FAQ</a> 
+            </div> 
+            <div class="side-nav-overlay" id="sideNavOverlay3" onclick="closeSideNav3()"></div> 
+            <button class="menu-btn" onclick="showMain()">← Back</button> 
+            <h1 class="title">Secure Login / Sign In</h1> 
+            <div class="contact-bar" onclick="alert('Contact: support@pandemicmgmt.com')">Contact Us</div> 
+        </header> 
+        
+        <div class="login-form fade-in"> 
+            <div id="loginMessage" class="login-message" style="display:none;"></div> 
+            <form id="loginForm" onsubmit="handleLogin(event)"> 
+                <div class="form-group"> 
+                    <label>Username or Phone Number</label> 
+                    <input type="text" id="loginUsername" placeholder="Enter username or phone" required> 
+                </div> 
+                <div class="form-group"> 
+                    <label>Password</label> 
+                    <input type="password" id="loginPassword" placeholder="Enter your password" required> 
+                </div> 
+                
+                <button type="submit" class="social-btn" style="background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%); color: white; margin-bottom: 20px;">Login</button> 
+            </form> 
+            
+            <div class="divider"> 
+                <span>or</span> 
+            </div> 
+            
+            <button class="social-btn google-btn">Continue with Google</button> 
+            <button class="social-btn apple-btn">Continue with Apple</button> 
+            
+            <div style="text-align: center; margin-top: 25px;"> 
+                <p style="color: #666; font-size: 0.95em;">Demo Credentials (for reference only):</p> 
+                <p style="color: #0f3460; font-weight: 600; font-size: 0.9em;"> 
+                    Username: <strong>jane.smith</strong><br> 
+                    Password: <strong>password123</strong> 
+                </p> 
+            </div> 
+        </div> 
+    </div> 
+ 
+    <div id="rolePage" class="role-page"> 
+        <header class="header"> 
+            <button class="hamburger" onclick="toggleSideNav4()" id="hamburgerBtn4"> 
+                <span></span> 
+                <span></span> 
+                <span></span> 
+            </button> 
+            <div class="side-nav" id="sideNav4"> 
+                <div class="side-nav-header">Account</div> 
+                <a class="side-nav-item" onclick="showLogout(); closeSideNav4();">Logout</a> 
+                
+                <div class="side-nav-divider"></div> 
+                
+                <div class="side-nav-header">Help</div> 
+                <a class="side-nav-item" onclick="contactSupport(); closeSideNav4();">Contact Support</a> 
+            </div> 
+            <div class="side-nav-overlay" id="sideNavOverlay4" onclick="closeSideNav4()"></div> 
+            <button class="menu-btn" onclick="showLogin()">← Back</button> 
+            <h1 class="title">Select Your Role</h1> 
+            <div class="contact-bar" onclick="alert('Contact: support@pandemicmgmt.com')">Contact Us</div> 
+        </header> 
+ 
+        <div class="role-container fade-in"> 
+            <h2 class="role-title">Choose Your Role</h2> 
+            <p class="role-subtitle">Select the role that best describes your current situation</p> 
+            
+            <div class="roles-grid"> 
+                                <div class="role-card" onclick="selectRole('Student')"> 
+                    <div class="role-icon">🎓</div> 
+                    <h3>Student</h3> 
+                    <p>If you are actively pursuing education, learning new skills, or enrolled in a course</p> 
+                    <button type="button" class="role-select-btn">Select</button> 
+                </div> 
+ 
+                                <div class="role-card" onclick="selectRole('Employee')"> 
+                    <div class="role-icon">💼</div> 
+                    <h3>Employee</h3> 
+                    <p>If you are currently employed and working for an organization or business</p> 
+                    <button type="button" class="role-select-btn">Select</button> 
+                </div> 
+ 
+                                <div class="role-card" onclick="selectRole('Job Seeker')"> 
+                    <div class="role-icon">🔍</div> 
+                    <h3>Job Seeker</h3> 
+                    <p>If you are currently looking for employment or between jobs</p> 
+                    <button type="button" class="role-select-btn">Select</button> 
+                </div> 
+            </div> 
+        </div> 
+    </div> 
+ 
+    <script> 
+        // Minimal AUTH Object to handle session/local storage, replacing backend.js functionality
+        const auth = {
+            getCurrentUser: () => {
+                const user = localStorage.getItem('currentUser');
+                return user ? JSON.parse(user) : null;
+            },
+            saveCurrentUser: (user) => {
+                localStorage.setItem('currentUser', JSON.stringify(user));
+            },
+            logout: () => {
+                localStorage.removeItem('currentUser');
+                return { success: true, message: 'You have been successfully logged out.' };
+            }
+        };
+ 
+        // Toggle side nav for main page 
+        function toggleSideNav() { 
+            const sideNav = document.getElementById('sideNav'); 
+            const overlay = document.getElementById('sideNavOverlay'); 
+            const hamburger = document.getElementById('hamburgerBtn'); 
+            sideNav.classList.toggle('active'); 
+            overlay.classList.toggle('active'); 
+            hamburger.classList.toggle('active'); 
+        } 
+        
+        function closeSideNav() { 
+            const sideNav = document.getElementById('sideNav'); 
+            const overlay = document.getElementById('sideNavOverlay'); 
+            const hamburger = document.getElementById('hamburgerBtn'); 
+            sideNav.classList.remove('active'); 
+            overlay.classList.remove('active'); 
+            hamburger.classList.remove('active'); 
+        } 
+ 
+        // Toggle side nav for dashboard 
+        function toggleSideNav2() { 
+            const sideNav = document.getElementById('sideNav2'); 
+            const overlay = document.getElementById('sideNavOverlay2'); 
+            const hamburger = document.getElementById('hamburgerBtn2'); 
+            sideNav.classList.toggle('active'); 
+            overlay.classList.toggle('active'); 
+            hamburger.classList.toggle('active'); 
+        } 
+        
+        function closeSideNav2() { 
+            const sideNav = document.getElementById('sideNav2'); 
+            const overlay = document.getElementById('sideNavOverlay2'); 
+            const hamburger = document.getElementById('hamburgerBtn2'); 
+            sideNav.classList.remove('active'); 
+            overlay.classList.remove('active'); 
+            hamburger.classList.remove('active'); 
+        } 
+ 
+        // Toggle side nav for login page 
+        function toggleSideNav3() { 
+            const sideNav = document.getElementById('sideNav3'); 
+            const overlay = document.getElementById('sideNavOverlay3'); 
+            const hamburger = document.getElementById('hamburgerBtn3'); 
+            sideNav.classList.toggle('active'); 
+            overlay.classList.toggle('active'); 
+            hamburger.classList.toggle('active'); 
+        } 
+        
+        function closeSideNav3() { 
+            const sideNav = document.getElementById('sideNav3'); 
+            const overlay = document.getElementById('sideNavOverlay3'); 
+            const hamburger = document.getElementById('hamburgerBtn3'); 
+            sideNav.classList.remove('active'); 
+            overlay.classList.remove('active'); 
+            hamburger.classList.remove('active'); 
+        } 
+ 
+        // Toggle side nav for role page 
+        function toggleSideNav4() { 
+            const sideNav = document.getElementById('sideNav4'); 
+            const overlay = document.getElementById('sideNavOverlay4'); 
+            const hamburger = document.getElementById('hamburgerBtn4'); 
+            sideNav.classList.toggle('active'); 
+            overlay.classList.toggle('active'); 
+            hamburger.classList.toggle('active'); 
+        } 
+        
+        function closeSideNav4() { 
+            const sideNav = document.getElementById('sideNav4'); 
+            const overlay = document.getElementById('sideNavOverlay4'); 
+            const hamburger = document.getElementById('hamburgerBtn4'); 
+            sideNav.classList.remove('active'); 
+            overlay.classList.remove('active'); 
+            hamburger.classList.remove('active'); 
+        } 
+ 
+        // MODIFIED function: Handles login and accepts ANY credentials.
+        function handleLogin(event) { 
+            event.preventDefault(); 
+            const username = document.getElementById('loginUsername').value; 
+            const messageDiv = document.getElementById('loginMessage'); 
+ 
+            // 1. Manually simulate successful login and create a mock user object
+            const namePart = username.split('.')[0];
+            const mockName = namePart.charAt(0).toUpperCase() + namePart.slice(1) + ' User';
+            const mockUser = {
+                id: 'U-' + Math.floor(Math.random() * 90000) + 10000,
+                name: mockName,
+                username: username,
+                email: `${username.toLowerCase().replace(/[^a-z0-9]/g, '')}@demo.com`,
+                role: 'Unspecified'
+            };
 
-    <div id="rolePage" class="role-page">
-        <header class="header">
-            <button class="hamburger" onclick="toggleSideNav4()" id="hamburgerBtn4">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-            <div class="side-nav" id="sideNav4">
-                <div class="side-nav-header">Account</div>
-                <a class="side-nav-item" onclick="showLogout(); closeSideNav4();">Logout</a>
-                
-                <div class="side-nav-divider"></div>
-                
-                <div class="side-nav-header">Help</div>
-                <a class="side-nav-item" onclick="contactSupport(); closeSideNav4();">Contact Support</a>
-            </div>
-            <div class="side-nav-overlay" id="sideNavOverlay4" onclick="closeSideNav4()"></div>
-            <button class="menu-btn" onclick="showLogin()">← Back</button>
-            <h1 class="title">Select Your Role</h1>
-            <div class="contact-bar" onclick="alert('Contact: support@pandemicmgmt.com')">Contact Us</div>
-        </header>
-
-        <div class="role-container fade-in">
-            <h2 class="role-title">Choose Your Role</h2>
-            <p class="role-subtitle">Select the role that best describes your current situation</p>
-            
-            <div class="roles-grid">
-                <!-- Student Role -->
-                <div class="role-card" onclick="selectRole('Student')">
-                    <div class="role-icon">🎓</div>
-                    <h3>Student</h3>
-                    <p>If you are actively pursuing education, learning new skills, or enrolled in a course</p>
-                    <button type="button" class="role-select-btn">Select</button>
-                </div>
-
-                <!-- Employee Role -->
-                <div class="role-card" onclick="selectRole('Employee')">
-                    <div class="role-icon">💼</div>
-                    <h3>Employee</h3>
-                    <p>If you are currently employed and working for an organization or business</p>
-                    <button type="button" class="role-select-btn">Select</button>
-                </div>
-
-                <!-- Job Seeker Role -->
-                <div class="role-card" onclick="selectRole('Job Seeker')">
-                    <div class="role-icon">🔍</div>
-                    <h3>Job Seeker</h3>
-                    <p>If you are currently looking for employment or between jobs</p>
-                    <button type="button" class="role-select-btn">Select</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // Toggle side nav for main page
-        function toggleSideNav() {
-            const sideNav = document.getElementById('sideNav');
-            const overlay = document.getElementById('sideNavOverlay');
-            const hamburger = document.getElementById('hamburgerBtn');
-            sideNav.classList.toggle('active');
-            overlay.classList.toggle('active');
-            hamburger.classList.toggle('active');
-        }
-        
-        function closeSideNav() {
-            const sideNav = document.getElementById('sideNav');
-            const overlay = document.getElementById('sideNavOverlay');
-            const hamburger = document.getElementById('hamburgerBtn');
-            sideNav.classList.remove('active');
-            overlay.classList.remove('active');
-            hamburger.classList.remove('active');
-        }
-
-        // Toggle side nav for dashboard
-        function toggleSideNav2() {
-            const sideNav = document.getElementById('sideNav2');
-            const overlay = document.getElementById('sideNavOverlay2');
-            const hamburger = document.getElementById('hamburgerBtn2');
-            sideNav.classList.toggle('active');
-            overlay.classList.toggle('active');
-            hamburger.classList.toggle('active');
-        }
-        
-        function closeSideNav2() {
-            const sideNav = document.getElementById('sideNav2');
-            const overlay = document.getElementById('sideNavOverlay2');
-            const hamburger = document.getElementById('hamburgerBtn2');
-            sideNav.classList.remove('active');
-            overlay.classList.remove('active');
-            hamburger.classList.remove('active');
-        }
-
-        // Toggle side nav for login page
-        function toggleSideNav3() {
-            const sideNav = document.getElementById('sideNav3');
-            const overlay = document.getElementById('sideNavOverlay3');
-            const hamburger = document.getElementById('hamburgerBtn3');
-            sideNav.classList.toggle('active');
-            overlay.classList.toggle('active');
-            hamburger.classList.toggle('active');
-        }
-        
-        function closeSideNav3() {
-            const sideNav = document.getElementById('sideNav3');
-            const overlay = document.getElementById('sideNavOverlay3');
-            const hamburger = document.getElementById('hamburgerBtn3');
-            sideNav.classList.remove('active');
-            overlay.classList.remove('active');
-            hamburger.classList.remove('active');
-        }
-
-        // Toggle side nav for role page
-        function toggleSideNav4() {
-            const sideNav = document.getElementById('sideNav4');
-            const overlay = document.getElementById('sideNavOverlay4');
-            const hamburger = document.getElementById('hamburgerBtn4');
-            sideNav.classList.toggle('active');
-            overlay.classList.toggle('active');
-            hamburger.classList.toggle('active');
-        }
-        
-        function closeSideNav4() {
-            const sideNav = document.getElementById('sideNav4');
-            const overlay = document.getElementById('sideNavOverlay4');
-            const hamburger = document.getElementById('hamburgerBtn4');
-            sideNav.classList.remove('active');
-            overlay.classList.remove('active');
-            hamburger.classList.remove('active');
-        }
-
-        // Handle login form submission
-        function handleLogin(event) {
-            event.preventDefault();
-            const username = document.getElementById('loginUsername').value;
-            const password = document.getElementById('loginPassword').value;
-            const messageDiv = document.getElementById('loginMessage');
-
-            // Use backend authentication
-            const result = auth.login(username, password);
-
-            if (result.success) {
-                messageDiv.classList.remove('error');
-                messageDiv.classList.add('success');
-                messageDiv.textContent = result.message;
-                messageDiv.style.display = 'block';
-                
-                // Clear form
-                document.getElementById('loginForm').reset();
-                
-                // Redirect to role selection after 1.5 seconds
-                setTimeout(() => {
+            // 2. Store the mock user object in local storage (session simulation)
+            auth.saveCurrentUser(mockUser);
+ 
+            // 3. Set the success message manually
+            messageDiv.classList.remove('error'); 
+            messageDiv.classList.add('success'); 
+            messageDiv.textContent = `Login successful! Redirecting for role selection...`; 
+            messageDiv.style.display = 'block'; 
+            
+            // Clear form 
+            document.getElementById('loginForm').reset(); 
+            
+            // Redirect to role selection after 1.5 seconds 
+            setTimeout(() => { 
+                showRolePage(); 
+            }, 1500); 
+        } 
+ 
+        // Select role and proceed to dashboard 
+        function selectRole(role) { 
+            const user = auth.getCurrentUser(); 
+            if (user) { 
+                // Store selected role in session 
+                user.selectedRole = role; 
+                auth.saveCurrentUser(user); // Use updated save function
+                
+                // Show alert 
+                alert(`Welcome ${user.name}! You have selected: ${role}`); 
+                
+                // Navigate to dashboard 
+                showDashboard(); 
+            } 
+        } 
+ 
+        // Update dashboard with user info including selected role 
+        function updateDashboard() { 
+            const user = auth.getCurrentUser(); 
+            if (user) { 
+                document.getElementById('userNameDisplay').textContent = user.name; 
+                document.getElementById('userUsernameDisplay').textContent = user.username; 
+                document.getElementById('userEmailDisplay').textContent = user.email; 
+                document.getElementById('userRoleDisplay').textContent = user.selectedRole || user.role || 'Not Selected'; 
+                document.getElementById('userIdDisplay').textContent = user.id; 
+            } else {
+                // If no user, redirect to login
+                showLogin();
+            }
+        } 
+ 
+        // Show profile page 
+        function showProfile() { 
+            alert('Profile editing coming soon!'); 
+            closeSideNav2(); 
+        } 
+        
+        function showDashboard() { 
+            document.getElementById('mainPage').style.display = 'none'; 
+            document.getElementById('loginPage').style.display = 'none'; 
+            document.getElementById('rolePage').style.display = 'none'; 
+            document.getElementById('dashboard').style.display = 'block'; 
+            updateDashboard(); 
+            closeSideNav2(); 
+        } 
+ 
+        function showRolePage() { 
+            document.getElementById('mainPage').style.display = 'none'; 
+            document.getElementById('loginPage').style.display = 'none'; 
+            document.getElementById('dashboard').style.display = 'none'; 
+            document.getElementById('rolePage').style.display = 'block'; 
+            closeSideNav(); 
+            closeSideNav3(); 
+        } 
+        
+        function showMain() { 
+            document.getElementById('dashboard').style.display = 'none'; 
+            document.getElementById('loginPage').style.display = 'none'; 
+            document.getElementById('rolePage').style.display = 'none'; 
+            document.getElementById('mainPage').style.display = 'block'; 
+            closeSideNav(); 
+            closeSideNav2(); 
+            closeSideNav3(); 
+            closeSideNav4(); 
+        } 
+        
+        function showLogin() { 
+            document.getElementById('dashboard').style.display = 'none'; 
+            document.getElementById('mainPage').style.display = 'none'; 
+            document.getElementById('rolePage').style.display = 'none'; 
+            document.getElementById('loginPage').style.display = 'block'; 
+            closeSideNav(); 
+            closeSideNav4(); 
+        } 
+        
+        function showLogout() { 
+            const confirmed = confirm('Are you sure you want to logout?'); 
+            if (confirmed) { 
+                const result = auth.logout(); 
+                alert(result.message); 
+                showMain(); 
+            } 
+            closeSideNav2(); 
+            closeSideNav4(); 
+        } 
+        
+        function contactSupport() { 
+            alert('Contact: support@pandemicmgmt.com\nEmail us for assistance!'); 
+        } 
+ 
+        // Initialize on page load 
+        window.addEventListener('load', () => { 
+            const currentUser = auth.getCurrentUser(); 
+            // Check if a user is already logged in and has a role selected
+            if (currentUser) {
+                if (currentUser.selectedRole) {
+                    showDashboard();
+                } else {
                     showRolePage();
-                }, 1500);
-            } else {
-                messageDiv.classList.remove('success');
-                messageDiv.classList.add('error');
-                messageDiv.textContent = result.message;
-                messageDiv.style.display = 'block';
-            }
-        }
-
-        // Select role and proceed to dashboard
-        function selectRole(role) {
-            const user = auth.getCurrentUser();
-            if (user) {
-                // Store selected role in session
-                user.selectedRole = role;
-                auth.currentUser = user;
-                auth.saveCurrentUser();
-                
-                // Show success message
-                alert(`Welcome ${user.name}! You have selected: ${role}`);
-                
-                // Navigate to dashboard
-                showDashboard();
-            }
-        }
-
-        // Update dashboard with user info including selected role
-        function updateDashboard() {
-            const user = auth.getCurrentUser();
-            if (user) {
-                document.getElementById('userNameDisplay').textContent = user.name;
-                document.getElementById('userUsernameDisplay').textContent = user.username;
-                document.getElementById('userEmailDisplay').textContent = user.email;
-                document.getElementById('userRoleDisplay').textContent = user.selectedRole || user.role || 'Not Selected';
-                document.getElementById('userIdDisplay').textContent = user.id;
-            }
-        }
-
-        // Show profile page
-        function showProfile() {
-            alert('Profile editing coming soon!');
-            closeSideNav2();
-        }
-        
-        function showDashboard() {
-            document.getElementById('mainPage').style.display = 'none';
-            document.getElementById('loginPage').style.display = 'none';
-            document.getElementById('rolePage').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'block';
-            updateDashboard();
-            closeSideNav2();
-        }
-
-        function showRolePage() {
-            document.getElementById('mainPage').style.display = 'none';
-            document.getElementById('loginPage').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'none';
-            document.getElementById('rolePage').style.display = 'block';
-            closeSideNav();
-            closeSideNav3();
-        }
-        
-        function showMain() {
-            document.getElementById('dashboard').style.display = 'none';
-            document.getElementById('loginPage').style.display = 'none';
-            document.getElementById('rolePage').style.display = 'none';
-            document.getElementById('mainPage').style.display = 'block';
-            closeSideNav();
-            closeSideNav2();
-            closeSideNav3();
-            closeSideNav4();
-        }
-        
-        function showLogin() {
-            document.getElementById('dashboard').style.display = 'none';
-            document.getElementById('mainPage').style.display = 'none';
-            document.getElementById('rolePage').style.display = 'none';
-            document.getElementById('loginPage').style.display = 'block';
-            closeSideNav();
-            closeSideNav4();
-        }
-        
-        function showLogout() {
-            const confirmed = confirm('Are you sure you want to logout?');
-            if (confirmed) {
-                const result = auth.logout();
-                alert(result.message);
+                }
+            } else {
                 showMain();
             }
-            closeSideNav2();
-            closeSideNav4();
-        }
-        
-        function contactSupport() {
-            alert('Contact: support@pandemicmgmt.com\nEmail us for assistance!');
-        }
-
-        // Initialize on page load
-        window.addEventListener('load', () => {
-            const currentUser = auth.getCurrentUser();
-            if (currentUser) {
-                updateDashboard();
-            }
-        });
-    </script>
-</body>
+        }); 
+    </script> 
+</body> 
 </html>
